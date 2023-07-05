@@ -1,22 +1,17 @@
-import { Component } from 'react';
-import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
+import { React, Component } from 'react';
 import { Overlay, ModalWindow } from './Modal.styled';
 
-const modalRoot = document.querySelector('#modal-root');
-
-class Modal extends Component {
+export class Modal extends Component {
   componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', this.handleKeydown);
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-    document.body.style.overflow = 'visible';
+    window.removeEventListener('keydown', this.handleKeydown);
   }
 
-  handleKeyDown = event => {
+  handleKeydown = event => {
     if (event.code === 'Escape') {
       this.props.onClose();
     }
@@ -24,27 +19,21 @@ class Modal extends Component {
 
   handleBackdropClick = event => {
     if (event.currentTarget === event.target) {
-      this.props.onClose(); // Закиття модалки при кліку на фон
+      this.props.onClose();
     }
   };
-  render() {
-    const { largeImageURL, tags } = this.props;
 
-    return createPortal(
+  render() {
+    return (
       <Overlay onClick={this.handleBackdropClick}>
         <ModalWindow>
-          <img src={largeImageURL} alt={tags} />
+          <img src={this.props.imgUrl} alt="" />
         </ModalWindow>
-      </Overlay>,
-      modalRoot
+      </Overlay>
     );
   }
 }
 
-Modal.propTypes = {
-  largeImageURL: PropTypes.string.isRequired,
-  tags: PropTypes.string.isRequired,
+Modal.proptTypes = {
   onClose: PropTypes.func.isRequired,
 };
-
-export default Modal;

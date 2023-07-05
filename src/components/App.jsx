@@ -1,99 +1,79 @@
-import { Component } from 'react';
-import * as API from './API/Api';
-import SearchBar from './Searchbar/Searchbar';
-import ImageGallery from './ImageGallery/ImageGallery';
+import { React, Component } from 'react';
+import { fetchPictures } from './API/Api';
+import { Searchbar } from './Searchbar/Searchbar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Modal } from './Modal/Modal';
 import Loader from './Loader/Loader';
-import Button from './Button/Button';
-import { ToastContainer, toast, Slide } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Button } from './Button/Button';
+import { Wrapper } from './Searchbar/Searchbar.styled';
+import GlobalStyle from './styles';
 
-class App extends Component {
+export class App extends Component {
   state = {
-    searchName: '',
-    images: [],
-    currentPage: 1,
-    error: null,
-    isLoading: false,
-    totalPages: 0,
+    pictures: [],
+    status: 'idle',
+    showModal: false,
+    largeImageUrl: '',
+    page: 1,
+    query: '',
+    loadMore: null,
   };
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.searchName !== this.state.searchName ||
-      prevState.currentPage !== this.state.currentPage
-    ) {
-      this.addImages();
-    }
-  }
-  // Метод для завантаження додаткових зображень
-  loadMore = () => {
-    this.setState(prevState => ({
-      currentPage: prevState.currentPage + 1,
+
+  getLargeImgUrl = imgUrl => {
+    this.setState({ largeImageUrl: imgUrl });
+    this.toggleModal();
+  };
+
+  toggleModal = () => {
+    this.setState(state => ({
+      showModal: !state.showModal,
     }));
   };
-  //Метод відправки форми
-  handleSubmit = query => {
-    this.setState({
-      searchName: query,
-      images: [], // Очищення масиву зображень
-      currentPage: 1, // Скидаємо номер сторінки на початкову
-    });
+
+  searchResult = value => {
+    this.setState({ query: value, page: 1, pictures: [], loadMore: null });
   };
-  // Метод для додавання і отримання зображень
-  addImages = async () => {
-    const { searchName, currentPage } = this.state;
-    try {
-      this.setState({ isLoading: true });
-      // Отримуємо дані через API запит
-      const data = await API.getImages(searchName, currentPage);
 
-      if (data.hits.length === 0) {
-        // Повідомлення якщо немає зображення
-        return toast.info('Sorry image not found...', {
-          // position: toast.POSITION.TOP_RIGHT,
-        });
-      }
+  handleLoadMore = () => {
+    this.setState(prevState => ({
+      page: prevState.page + 1,
+    }));
+  };
 
-      const normalizedImages = API.normalizedImages(data.hits);
+  componentDidUpdate(_, prevState) {
+    const { page, query } = this.state;
 
-      this.setState(state => ({
-        images: [...state.images, ...normalizedImages], // Додає нові зображення до існуючих
-        isLoading: false,
-        error: '',
-        totalPages: Math.ceil(data.totalHits / 12), // Загальна кількість сторінок
-      }));
-    } catch (error) {
-      this.setState({ error: 'Something went wrong!' }); // Повідомлення при помилці
-    } finally {
-      this.setState({ isLoading: false });
+    if (
+      prevState.page !== this.state.page ||
+      prevState.query !== this.state.query
+    ) {
+      this.setState({ status: 'loading' });
+
+      fetchPictures(query, page)
+        .then(e =>
+          this.setState(prevState => ({
+            pictures: [...prevState.pictures, ...e.hits],
+            status: 'idle',
+            loadMore: 12 - e.hits.length,
+          }))
+        )
+        .catch(error => console.log(error));
     }
-  };
-  render() {
-    const { images, isLoading, currentPage, totalPages } = this.state;
+  }
 
+  render() {
+    const { pictures, status, showModal, largeImageUrl, loadMore } = this.state;
     return (
-      <div>
-        <ToastContainer transition={Slide} />
-        <SearchBar onSubmit={this.handleSubmit} />
-        {images.length > 0 ? (
-          <ImageGallery images={images} />
-        ) : (
-          <p
-            style={{
-              padding: 100,
-              textAlign: 'center',
-              fontSize: 30,
-            }}
-          >
-            Image gallery is empty... 📷
-          </p>
+      <Wrapper>
+        <GlobalStyle />
+        <Searchbar onSubmit={this.searchResult} />
+        {showModal && (
+          <Modal imgUrl={largeImageUrl} onClose={this.toggleModal} />
         )}
-        {isLoading && <Loader />}
-        {images.length > 0 && totalPages !== currentPage && !isLoading && (
-          <Button onClick={this.loadMore} />
-        )}
-      </div>
+        <ImageGallery pictures={pictures} onClick={this.getLargeImgUrl} />
+        {status === 'loading' && <Loader />}
+        {loadMore === 0 && <Button onClick={this.handleLoadMore} />}
+      </Wrapper>
     );
   }
 }
-
-export default App;

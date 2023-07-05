@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 
-export const ButtonLoad = styled.button`
+export const LoadButton = styled.button`
   width: 160px;
   height: 40px;
   margin-top: 10px;

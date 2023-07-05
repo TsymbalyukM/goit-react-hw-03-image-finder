@@ -1,10 +1,10 @@
 import styled from '@emotion/styled';
 
-export const Item = styled.li`
+export const ImageGalleryCard = styled.li`
   border-radius: 8px;
 `;
 
-export const Img = styled.img`
+export const GalleryCardImg = styled.img`
   width: 100%;
   height: 230px;
   object-fit: cover;

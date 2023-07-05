@@ -1,52 +1,23 @@
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Modal from '../Modal/Modal';
-import { Item, Img } from './ImageGalleryItem.styled';
+import { ImageGalleryCard, GalleryCardImg } from './ImageGalleryItem.styled';
 
-// Классовый компонент ImageItem
-class ImageItem extends Component {
-  state = {
-    showModal: false, // Стан модального вікна
-  };
-
-  // Переключення станку модального вікна
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
-  };
-
-  render() {
-    const { showModal } = this.state;
-    const { image } = this.props;
-
+export const ImageGalleryItem = ({ pictures, onClickImg }) => {
+  return pictures.map((picture, index) => {
     return (
-      <>
-        <Item>
-          <Img
-            src={image.webformatURL}
-            alt={image.tags}
-            onClick={this.toggleModal}
-          />
-          {showModal && (
-            <Modal
-              largeImageURL={image.largeImageURL}
-              tags={image.tags}
-              onClose={this.toggleModal}
-            />
-          )}
-        </Item>
-      </>
+      <ImageGalleryCard key={index}>
+        <GalleryCardImg
+          onClick={() => {
+            onClickImg(picture.largeImageURL);
+          }}
+          src={picture.webformatURL}
+          alt={picture.tags}
+        />
+      </ImageGalleryCard>
     );
-  }
-}
-
-ImageItem.propTypes = {
-  image: PropTypes.shape({
-    webformatURL: PropTypes.string.isRequired,
-    tags: PropTypes.string.isRequired,
-    largeImageURL: PropTypes.string.isRequired,
-  }).isRequired,
+  });
 };
 
-export default ImageItem;
+ImageGalleryItem.propTypes = {
+  pictures: PropTypes.array.isRequired,
+  onClickImg: PropTypes.func.isRequired,
+};

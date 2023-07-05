@@ -18,6 +18,6 @@ export const ButtonLoad = styled.button`
   &:hover,
   &:focus {
     color: black;
-    background-color: rgba(255, 255, 126, 1);
+    background-color: lightpink;
   }
 `;

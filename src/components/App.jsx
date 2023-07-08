@@ -11,12 +11,12 @@ import GlobalStyle from './styles';
 export class App extends Component {
   state = {
     pictures: [],
-    status: 'idle',
     showModal: false,
     largeImageUrl: '',
     page: 1,
     query: '',
-    loadMore: null,
+    error: null,
+    isLoading: false,
   };
 
   getLargeImgUrl = imgUrl => {
@@ -31,7 +31,7 @@ export class App extends Component {
   };
 
   searchResult = value => {
-    this.setState({ query: value, page: 1, pictures: [], loadMore: null });
+    this.setState({ query: value, page: 1, pictures: [] });
   };
 
   handleLoadMore = () => {
@@ -41,28 +41,37 @@ export class App extends Component {
   };
 
   componentDidUpdate(_, prevState) {
-    const { page, query } = this.state;
-
     if (
       prevState.page !== this.state.page ||
       prevState.query !== this.state.query
     ) {
-      this.setState({ status: 'loading' });
-
-      fetchPictures(query, page)
-        .then(e =>
-          this.setState(prevState => ({
-            pictures: [...prevState.pictures, ...e.hits],
-            status: 'idle',
-            loadMore: 12 - e.hits.length,
-          }))
-        )
-        .catch(error => console.log(error));
+      this.addPictures(this.state.query, this.state.page);
     }
   }
 
+  addPictures = async (query, page) => {
+    try {
+      this.setState(() => ({ isLoading: true }));
+
+      const { hits } = await fetchPictures(query, page);
+
+      if (page === 1) {
+        this.setState(() => ({ pictures: hits }));
+      } else {
+        this.setState(state => ({
+          pictures: [...state.pictures, ...hits],
+        }));
+      }
+    } catch (error) {
+      this.setState(() => ({ error: error.message }));
+    } finally {
+      this.setState(() => ({ isLoading: false }));
+    }
+  };
+
   render() {
-    const { pictures, status, showModal, largeImageUrl, loadMore } = this.state;
+    const { pictures, error, isLoading, showModal, largeImageUrl } = this.state;
+    const loadMoreButton = pictures.length > 0 && !isLoading;
     return (
       <Wrapper>
         <GlobalStyle />
@@ -70,9 +79,14 @@ export class App extends Component {
         {showModal && (
           <Modal imgUrl={largeImageUrl} onClose={this.toggleModal} />
         )}
-        <ImageGallery pictures={pictures} onClick={this.getLargeImgUrl} />
-        {status === 'loading' && <Loader />}
-        {loadMore === 0 && <Button onClick={this.handleLoadMore} />}
+        <ImageGallery
+          error={error}
+          isLoading={isLoading}
+          pictures={pictures}
+          onClick={this.getLargeImgUrl}
+        />
+        {loadMoreButton && <Button onClick={this.handleLoadMore} />}
+        {isLoading && <Loader />}
       </Wrapper>
     );
   }

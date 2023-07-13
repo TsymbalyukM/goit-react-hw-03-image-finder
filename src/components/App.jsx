@@ -19,16 +19,12 @@ export class App extends Component {
     isLoading: false,
   };
 
-  getLargeImgUrl = imgUrl => {
-    this.setState({ largeImageUrl: imgUrl });
-    this.toggleModal();
-  };
-
-  toggleModal = () => {
-    this.setState(state => ({
-      showModal: !state.showModal,
-    }));
-  };
+  componentDidUpdate(_, prevState) {
+    const { page, query } = this.state;
+    if (prevState.page !== page || prevState.query !== query) {
+      this.addPictures(query, page);
+    }
+  }
 
   searchResult = value => {
     this.setState({ query: value, page: 1, pictures: [] });
@@ -40,33 +36,30 @@ export class App extends Component {
     }));
   };
 
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.page !== this.state.page ||
-      prevState.query !== this.state.query
-    ) {
-      this.addPictures(this.state.query, this.state.page);
-    }
-  }
-
   addPictures = async (query, page) => {
     try {
-      this.setState(() => ({ isLoading: true }));
+      this.setState({ isLoading: true });
 
       const { hits } = await fetchPictures(query, page);
 
-      if (page === 1) {
-        this.setState(() => ({ pictures: hits }));
-      } else {
-        this.setState(state => ({
-          pictures: [...state.pictures, ...hits],
-        }));
-      }
+      this.setState(prevState => ({
+        pictures: [...prevState.pictures, ...hits],
+      }));
     } catch (error) {
-      this.setState(() => ({ error: error.message }));
+      this.setState({ error: error.message });
     } finally {
-      this.setState(() => ({ isLoading: false }));
+      this.setState({ isLoading: false });
     }
+  };
+  getLargeImgUrl = imgUrl => {
+    this.setState({ largeImageUrl: imgUrl });
+    this.toggleModal();
+  };
+
+  toggleModal = () => {
+    this.setState(prevState => ({
+      showModal: !prevState.showModal,
+    }));
   };
 
   render() {
